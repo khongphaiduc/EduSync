@@ -49,6 +49,8 @@ public partial class MyFschoolDemoContext : DbContext
 
     public virtual DbSet<Request> Requests { get; set; }
 
+    public virtual DbSet<Role> Roles { get; set; }
+
     public virtual DbSet<Semester> Semesters { get; set; }
 
     public virtual DbSet<Student> Students { get; set; }
@@ -378,11 +380,7 @@ public partial class MyFschoolDemoContext : DbContext
             entity.Property(e => e.CreatedByIp)
                 .HasMaxLength(45)
                 .IsUnicode(false);
-            entity.Property(e => e.DeviceName).HasMaxLength(200);
             entity.Property(e => e.ExpiresAt).HasPrecision(0);
-            entity.Property(e => e.Platform)
-                .HasMaxLength(20)
-                .IsUnicode(false);
             entity.Property(e => e.RevokedAt).HasPrecision(0);
             entity.Property(e => e.TokenHash)
                 .HasMaxLength(64)
@@ -475,6 +473,16 @@ public partial class MyFschoolDemoContext : DbContext
                 .HasConstraintName("FK_Students_Users");
         });
 
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasIndex(e => e.Name, "UQ_Roles_Name").IsUnique();
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newsequentialid())");
+            entity.Property(e => e.Name)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasIndex(e => e.Email, "UQ_Users_Email").IsUnique();
@@ -486,10 +494,12 @@ public partial class MyFschoolDemoContext : DbContext
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.PasswordHash).HasMaxLength(500);
-            entity.Property(e => e.Role)
-                .HasMaxLength(20)
-                .IsUnicode(false);
             entity.Property(e => e.UpdatedAt).HasPrecision(0);
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Users)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Users_Roles");
         });
 
         OnModelCreatingPartial(modelBuilder);

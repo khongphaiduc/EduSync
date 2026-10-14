@@ -2,8 +2,8 @@ using EduSync.Application.Abstractions.Authentication;
 using EduSync.Application.Abstractions.Persistence;
 using EduSync.Application.Common.Exceptions;
 using EduSync.Application.DTOs.Auth;
-using EduSync.Domain.Constants;
 using EduSync.Domain.Entities;
+using EduSync.Domain.Enums;
 
 namespace EduSync.Application.Services.Auth;
 
@@ -45,12 +45,16 @@ public sealed class AuthService(
             throw new AuthException(AuthError.StudentCodeAlreadyExists, "Student code already exists.");
         }
 
+        var studentRole = await repository.FindRoleAsync(UserRole.Student, cancellationToken)
+            ?? throw new InvalidOperationException("Student role is not configured.");
+
         var nowUtc = DateTime.UtcNow;
         var user = new UserEntity
         {
             Id = Guid.NewGuid(),
             Email = email,
-            Role = UserRoles.Student,
+            RoleId = studentRole.Id,
+            Role = studentRole,
             IsActive = true,
             CreatedAt = nowUtc
         };
@@ -72,7 +76,7 @@ public sealed class AuthService(
         await repository.CreateAccountAsync(
             user,
             student,
-            CreateRefreshToken(user.Id, issued, command.Platform, command.DeviceName, ipAddress),
+            CreateRefreshToken(user.Id, issued, ipAddress),
             cancellationToken);
         return ToDto(user, issued);
     }
@@ -80,8 +84,6 @@ public sealed class AuthService(
     public async Task<AuthTokensDto> LoginAsync(
         string email,
         string password,
-        string platform,
-        string? deviceName,
         string? ipAddress,
         CancellationToken cancellationToken)
     {
@@ -98,7 +100,7 @@ public sealed class AuthService(
 
         var issued = tokens.Issue(user);
         await repository.AddRefreshTokenAsync(
-            CreateRefreshToken(user.Id, issued, platform, deviceName, ipAddress),
+            CreateRefreshToken(user.Id, issued, ipAddress),
             cancellationToken);
         return ToDto(user, issued);
     }
@@ -121,8 +123,6 @@ public sealed class AuthService(
         var next = CreateRefreshToken(
             session.User.Id,
             issued,
-            session.Token.Platform,
-            session.Token.DeviceName,
             ipAddress);
         var rotated = await repository.RotateRefreshTokenAsync(
             session.Token, next, nowUtc, cancellationToken);
@@ -148,30 +148,26 @@ public sealed class AuthService(
             throw new AuthException(AuthError.InactiveAccount, "Account is inactive.");
         }
 
-        return new AuthUserDto(user.Id, user.Email, user.Role);
+        return new AuthUserDto(user.Id, user.Email, user.Role.Name);
     }
 
     private RefreshTokenEntity CreateRefreshToken(
         Guid userId,
         IssuedTokens issued,
-        string platform,
-        string? deviceName,
         string? ipAddress) => new()
-    {
-        Id = Guid.NewGuid(),
-        UserId = userId,
-        TokenHash = tokens.HashRefreshToken(issued.RefreshToken),
-        Platform = platform,
-        DeviceName = deviceName,
-        CreatedAt = DateTime.UtcNow,
-        ExpiresAt = issued.RefreshTokenExpiresAtUtc,
-        CreatedByIp = ipAddress
-    };
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            TokenHash = tokens.HashRefreshToken(issued.RefreshToken),
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = issued.RefreshTokenExpiresAtUtc,
+            CreatedByIp = ipAddress
+        };
 
     private static AuthTokensDto ToDto(UserEntity user, IssuedTokens issued) => new(
         user.Id,
         user.Email,
-        user.Role,
+        user.Role.Name,
         issued.AccessToken,
         issued.AccessTokenExpiresAtUtc,
         issued.RefreshToken,

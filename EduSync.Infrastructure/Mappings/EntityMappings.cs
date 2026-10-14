@@ -1,4 +1,5 @@
 using EduSync.Domain.Entities;
+using EduSync.Domain.Enums;
 using EduSync.Infrastructure.Models;
 
 namespace EduSync.Infrastructure.Mappings;
@@ -460,8 +461,6 @@ public static class EntityMappings
             Id = source.Id,
             UserId = source.UserId,
             TokenHash = source.TokenHash,
-            Platform = source.Platform,
-            DeviceName = source.DeviceName,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
             RevokedAt = source.RevokedAt,
@@ -479,8 +478,6 @@ public static class EntityMappings
             Id = source.Id,
             UserId = source.UserId,
             TokenHash = source.TokenHash,
-            Platform = source.Platform,
-            DeviceName = source.DeviceName,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
             RevokedAt = source.RevokedAt,
@@ -599,6 +596,28 @@ public static class EntityMappings
         };
     }
 
+    public static RoleEntity ToDomainEntity(this Role source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        return new RoleEntity
+        {
+            Id = source.Id,
+            Name = ParseUserRole(source.Name),
+        };
+    }
+
+    public static Role ToDatabaseModel(this RoleEntity source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        return new Role
+        {
+            Id = source.Id,
+            Name = source.Name.ToString(),
+        };
+    }
+
     public static UserEntity ToDomainEntity(this User source)
     {
         ArgumentNullException.ThrowIfNull(source);
@@ -608,7 +627,8 @@ public static class EntityMappings
             Id = source.Id,
             Email = source.Email,
             PasswordHash = source.PasswordHash,
-            Role = source.Role,
+            RoleId = source.RoleId,
+            Role = source.Role.ToDomainEntity(),
             IsActive = source.IsActive,
             CreatedAt = source.CreatedAt,
             UpdatedAt = source.UpdatedAt,
@@ -624,10 +644,20 @@ public static class EntityMappings
             Id = source.Id,
             Email = source.Email,
             PasswordHash = source.PasswordHash,
-            Role = source.Role,
+            RoleId = source.RoleId,
             IsActive = source.IsActive,
             CreatedAt = source.CreatedAt,
             UpdatedAt = source.UpdatedAt,
         };
+    }
+
+    private static UserRole ParseUserRole(string name)
+    {
+        if (!Enum.TryParse<UserRole>(name, out var role) || !Enum.IsDefined(role))
+        {
+            throw new InvalidOperationException($"Unknown user role '{name}'.");
+        }
+
+        return role;
     }
 }

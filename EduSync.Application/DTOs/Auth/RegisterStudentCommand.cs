@@ -9,6 +9,4 @@ public sealed record RegisterStudentCommand(
     int EnrollmentYear,
     DateOnly? DateOfBirth,
     string? Gender,
-    string? Phone,
-    string Platform,
-    string? DeviceName);
+    string? Phone);

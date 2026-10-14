@@ -1,6 +1,7 @@
 using EduSync.Application.Abstractions.Persistence;
 using EduSync.Application.Common.Exceptions;
 using EduSync.Domain.Entities;
+using EduSync.Domain.Enums;
 using EduSync.Infrastructure.Mappings;
 using EduSync.Infrastructure.Models;
 using Microsoft.Data.SqlClient;
@@ -13,6 +14,7 @@ public sealed class AuthRepository(MyFschoolDemoContext context) : IAuthReposito
     public async Task<UserEntity?> FindUserByEmailAsync(string email, CancellationToken cancellationToken)
     {
         var model = await context.Users.AsNoTracking()
+            .Include(user => user.Role)
             .SingleOrDefaultAsync(user => user.Email == email, cancellationToken);
         return model?.ToDomainEntity();
     }
@@ -20,6 +22,7 @@ public sealed class AuthRepository(MyFschoolDemoContext context) : IAuthReposito
     public async Task<UserEntity?> FindUserByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var model = await context.Users.AsNoTracking()
+            .Include(user => user.Role)
             .SingleOrDefaultAsync(user => user.Id == id, cancellationToken);
         return model?.ToDomainEntity();
     }
@@ -33,10 +36,18 @@ public sealed class AuthRepository(MyFschoolDemoContext context) : IAuthReposito
     public Task<bool> MajorExistsAsync(Guid majorId, CancellationToken cancellationToken) =>
         context.Majors.AnyAsync(major => major.Id == majorId, cancellationToken);
 
+    public async Task<RoleEntity?> FindRoleAsync(UserRole role, CancellationToken cancellationToken)
+    {
+        var name = role.ToString();
+        var model = await context.Roles.AsNoTracking()
+            .SingleOrDefaultAsync(role => role.Name == name, cancellationToken);
+        return model?.ToDomainEntity();
+    }
+
     public async Task CreateAccountAsync(
         UserEntity user,
         StudentEntity? student,
-        RefreshTokenEntity refreshToken,
+        RefreshTokenEntity? refreshToken,
         CancellationToken cancellationToken)
     {
         context.Users.Add(user.ToDatabaseModel());
@@ -45,7 +56,10 @@ public sealed class AuthRepository(MyFschoolDemoContext context) : IAuthReposito
             context.Students.Add(student.ToDatabaseModel());
         }
 
-        context.RefreshTokens.Add(refreshToken.ToDatabaseModel());
+        if (refreshToken is not null)
+        {
+            context.RefreshTokens.Add(refreshToken.ToDatabaseModel());
+        }
         try
         {
             await context.SaveChangesAsync(cancellationToken);
@@ -68,6 +82,7 @@ public sealed class AuthRepository(MyFschoolDemoContext context) : IAuthReposito
     {
         var model = await context.RefreshTokens.AsNoTracking()
             .Include(token => token.User)
+            .ThenInclude(user => user.Role)
             .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
 
         return model is null

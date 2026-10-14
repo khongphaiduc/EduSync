@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using EduSync.API.Common;
 using EduSync.Application.Services.Auth;
 using EduSync.Application.Services.Courses;
+using EduSync.Application.Services.Students;
 using EduSync.Infrastructure;
 using EduSync.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -37,9 +38,14 @@ public class Program
 
         var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
             ?? throw new InvalidOperationException("Jwt configuration is required.");
+        if (string.IsNullOrWhiteSpace(jwt.Key))
+        {
+            throw new InvalidOperationException(
+                "Jwt:Key is missing. Configure it with User Secrets or Jwt__Key.");
+        }
+
         if (string.IsNullOrWhiteSpace(jwt.Issuer)
             || string.IsNullOrWhiteSpace(jwt.Audience)
-            || string.IsNullOrWhiteSpace(jwt.Key)
             || Encoding.UTF8.GetByteCount(jwt.Key) < 32
             || jwt.AccessTokenMinutes is < 1 or > 60
             || jwt.RefreshTokenDays is < 1 or > 90)
@@ -85,6 +91,11 @@ public class Program
                 };
             });
         builder.Services.AddAuthorization();
+        var frontendOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        builder.Services.AddCors(options => options.AddPolicy("Frontend", policy => policy
+            .WithOrigins(frontendOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()));
         builder.Services.AddRateLimiter(options =>
         {
             options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
@@ -108,6 +119,7 @@ public class Program
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
         builder.Services.AddProblemDetails();
         builder.Services.AddScoped<ICourseService, CourseService>();
+        builder.Services.AddScoped<IStudentService, StudentService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddInfrastructure(
             builder.Configuration.GetConnectionString("DefaultConnection")
@@ -130,6 +142,7 @@ public class Program
         });
         app.UseHttpsRedirection();
         app.UseRouting();
+        app.UseCors("Frontend");
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();

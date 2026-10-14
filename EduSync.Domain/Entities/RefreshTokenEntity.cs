@@ -8,10 +8,6 @@ public class RefreshTokenEntity
 
     public string TokenHash { get; set; } = string.Empty;
 
-    public string Platform { get; set; } = string.Empty;
-
-    public string? DeviceName { get; set; }
-
     public DateTime CreatedAt { get; set; }
 
     public DateTime ExpiresAt { get; set; }

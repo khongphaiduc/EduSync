@@ -24,9 +24,9 @@ public sealed record ApiResponse<T>
     public static ApiResponse<T> Failed(
         string message,
         IReadOnlyDictionary<string, string[]>? errors = null) => new()
-    {
-        Success = false,
-        Message = message,
-        Errors = errors
-    };
+        {
+            Success = false,
+            Message = message,
+            Errors = errors
+        };
 }

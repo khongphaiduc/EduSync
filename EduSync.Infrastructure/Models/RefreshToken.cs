@@ -11,10 +11,6 @@ public partial class RefreshToken
 
     public string TokenHash { get; set; } = null!;
 
-    public string Platform { get; set; } = null!;
-
-    public string? DeviceName { get; set; }
-
     public DateTime CreatedAt { get; set; }
 
     public DateTime ExpiresAt { get; set; }

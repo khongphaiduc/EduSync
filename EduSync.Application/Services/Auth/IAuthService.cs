@@ -12,8 +12,6 @@ public interface IAuthService
     Task<AuthTokensDto> LoginAsync(
         string email,
         string password,
-        string platform,
-        string? deviceName,
         string? ipAddress,
         CancellationToken cancellationToken);
 

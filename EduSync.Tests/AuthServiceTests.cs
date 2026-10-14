@@ -6,6 +6,7 @@ using EduSync.Application.Common.Exceptions;
 using EduSync.Application.DTOs.Auth;
 using EduSync.Application.Services.Auth;
 using EduSync.Domain.Entities;
+using EduSync.Domain.Enums;
 using EduSync.Infrastructure.Authentication;
 using Microsoft.IdentityModel.Tokens;
 
@@ -14,6 +15,7 @@ namespace EduSync.Tests;
 public sealed class AuthServiceTests
 {
     private static readonly Guid MajorId = Guid.NewGuid();
+    private static readonly Guid StudentRoleId = Guid.NewGuid();
     private static readonly JwtOptions Jwt = new()
     {
         Issuer = "EduSync.Tests",
@@ -33,7 +35,9 @@ public sealed class AuthServiceTests
         var result = await service.RegisterAsync(Command(), "127.0.0.1", CancellationToken.None);
 
         Assert.Equal("student@example.com", repository.User?.Email);
-        Assert.Equal("Student", repository.User?.Role);
+        Assert.Equal(StudentRoleId, repository.User?.RoleId);
+        Assert.Equal(UserRole.Student, repository.User?.Role.Name);
+        Assert.Equal(UserRole.Student, result.Role);
         Assert.Equal(repository.User?.Id, repository.Student?.UserId);
         Assert.NotEqual(Command().Password, repository.User?.PasswordHash);
         Assert.True(passwords.Verify(repository.User!, Command().Password));
@@ -67,7 +71,7 @@ public sealed class AuthServiceTests
         await service.RegisterAsync(Command(), null, CancellationToken.None);
 
         var error = await Assert.ThrowsAsync<AuthException>(() => service.LoginAsync(
-            "student@example.com", "wrong-password", "Web", null, null, CancellationToken.None));
+            "student@example.com", "wrong-password", null, CancellationToken.None));
 
         Assert.Equal(AuthError.InvalidCredentials, error.Error);
     }
@@ -95,7 +99,7 @@ public sealed class AuthServiceTests
         var registration = await service.RegisterAsync(Command(), null, CancellationToken.None);
 
         var login = await service.LoginAsync(
-            "STUDENT@example.com", Command().Password, "Web", null, null, CancellationToken.None);
+            "STUDENT@example.com", Command().Password, null, CancellationToken.None);
 
         Assert.Equal(registration.UserId, login.UserId);
         Assert.NotEqual(registration.AccessToken, login.AccessToken);
@@ -118,9 +122,9 @@ public sealed class AuthServiceTests
 
     private static RegisterStudentCommand Command() => new(
         "Student@Example.com", "Password123!", "STU001", "Test Student", MajorId,
-        2026, null, null, null, "Web", null);
+        2026, null, null, null);
 
-    private sealed class FakeAuthRepository(Guid majorId) : IAuthRepository
+    internal sealed class FakeAuthRepository(Guid majorId) : IAuthRepository
     {
         private readonly Dictionary<string, RefreshTokenEntity> _tokens = [];
 
@@ -143,16 +147,24 @@ public sealed class AuthServiceTests
         public Task<bool> MajorExistsAsync(Guid id, CancellationToken cancellationToken) =>
             Task.FromResult(id == majorId);
 
+        public Task<RoleEntity?> FindRoleAsync(UserRole role, CancellationToken cancellationToken) =>
+            Task.FromResult<RoleEntity?>(role == UserRole.Student
+                ? new RoleEntity { Id = StudentRoleId, Name = UserRole.Student }
+                : null);
+
         public Task CreateAccountAsync(
             UserEntity user,
             StudentEntity? student,
-            RefreshTokenEntity refreshToken,
+            RefreshTokenEntity? refreshToken,
             CancellationToken cancellationToken)
         {
             User = user;
             Student = student;
             RefreshToken = refreshToken;
-            _tokens.Add(refreshToken.TokenHash, refreshToken);
+            if (refreshToken is not null)
+            {
+                _tokens.Add(refreshToken.TokenHash, refreshToken);
+            }
             return Task.CompletedTask;
         }
 

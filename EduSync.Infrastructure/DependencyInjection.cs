@@ -16,6 +16,7 @@ public static class DependencyInjection
 
         services.AddDbContext<MyFschoolDemoContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<ICourseRepository, CourseRepository>();
+        services.AddScoped<IStudentRepository, StudentRepository>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddSingleton<IPasswordService, IdentityPasswordService>();
         services.AddSingleton<IAuthTokenService, JwtTokenService>();

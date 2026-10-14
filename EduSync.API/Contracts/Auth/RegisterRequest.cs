@@ -30,9 +30,4 @@ public sealed class RegisterRequest
     [StringLength(20)]
     public string? Phone { get; init; }
 
-    [Required, StringLength(20)]
-    public string Platform { get; init; } = "Web";
-
-    [StringLength(200)]
-    public string? DeviceName { get; init; }
 }

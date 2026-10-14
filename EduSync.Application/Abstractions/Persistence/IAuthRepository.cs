@@ -1,4 +1,5 @@
 using EduSync.Domain.Entities;
+using EduSync.Domain.Enums;
 
 namespace EduSync.Application.Abstractions.Persistence;
 
@@ -14,10 +15,12 @@ public interface IAuthRepository
 
     Task<bool> MajorExistsAsync(Guid majorId, CancellationToken cancellationToken);
 
+    Task<RoleEntity?> FindRoleAsync(UserRole role, CancellationToken cancellationToken);
+
     Task CreateAccountAsync(
         UserEntity user,
         StudentEntity? student,
-        RefreshTokenEntity refreshToken,
+        RefreshTokenEntity? refreshToken,
         CancellationToken cancellationToken);
 
     Task AddRefreshTokenAsync(RefreshTokenEntity token, CancellationToken cancellationToken);

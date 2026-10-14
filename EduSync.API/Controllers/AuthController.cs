@@ -27,9 +27,7 @@ public sealed class AuthController(IAuthService auth) : ControllerBase
             request.EnrollmentYear,
             request.DateOfBirth,
             request.Gender,
-            request.Phone,
-            request.Platform,
-            request.DeviceName);
+            request.Phone);
         var tokens = await auth.RegisterAsync(
             command,
             HttpContext.Connection.RemoteIpAddress?.ToString(),
@@ -46,8 +44,6 @@ public sealed class AuthController(IAuthService auth) : ControllerBase
         var tokens = await auth.LoginAsync(
             request.Email,
             request.Password,
-            request.Platform,
-            request.DeviceName,
             HttpContext.Connection.RemoteIpAddress?.ToString(),
             cancellationToken);
         return Ok(ApiResponse<AuthTokensDto>.Succeeded(tokens, "Logged in."));

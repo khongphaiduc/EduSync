@@ -1,5 +1,6 @@
 @host = http://localhost:5271
 @accessToken = paste_access_token_here
+@adminAccessToken = paste_admin_access_token_here
 @refreshToken = paste_refresh_token_here
 
 ### Register a student (majorId must exist in the database)
@@ -15,9 +16,7 @@ Content-Type: application/json
   "enrollmentYear": 2026,
   "dateOfBirth": "2007-05-12",
   "gender": "Male",
-  "phone": "0900000000",
-  "platform": "Web",
-  "deviceName": "Chrome"
+  "phone": "0900000000"
 }
 
 ### Login
@@ -26,9 +25,7 @@ Content-Type: application/json
 
 {
   "email": "student@example.com",
-  "password": "Password123!",
-  "platform": "Web",
-  "deviceName": "Chrome"
+  "password": "Password123!"
 }
 
 ### Rotate refresh token
@@ -59,3 +56,25 @@ Accept: application/json
 ### Get course
 GET {{host}}/api/courses/00000000-0000-0000-0000-000000000000
 Accept: application/json
+
+### List students (Admin)
+GET {{host}}/api/students?page=1&pageSize=20
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### Create student (Admin; majorId must exist in the database)
+POST {{host}}/api/students
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "email": "new.student@example.com",
+  "password": "Password123!",
+  "studentCode": "STU002",
+  "fullName": "Nguyen Van B",
+  "majorId": "00000000-0000-0000-0000-000000000001",
+  "enrollmentYear": 2026,
+  "dateOfBirth": "2007-07-14",
+  "gender": "Male",
+  "phone": "0900000001"
+}
