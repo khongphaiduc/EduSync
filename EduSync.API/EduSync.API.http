@@ -1,0 +1,61 @@
+@host = http://localhost:5271
+@accessToken = paste_access_token_here
+@refreshToken = paste_refresh_token_here
+
+### Register a student (majorId must exist in the database)
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "student@example.com",
+  "password": "Password123!",
+  "studentCode": "STU001",
+  "fullName": "Nguyen Van A",
+  "majorId": "00000000-0000-0000-0000-000000000001",
+  "enrollmentYear": 2026,
+  "dateOfBirth": "2007-05-12",
+  "gender": "Male",
+  "phone": "0900000000",
+  "platform": "Web",
+  "deviceName": "Chrome"
+}
+
+### Login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "student@example.com",
+  "password": "Password123!",
+  "platform": "Web",
+  "deviceName": "Chrome"
+}
+
+### Rotate refresh token
+POST {{host}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Current user
+GET {{host}}/api/auth/me
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### Revoke refresh token
+POST {{host}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### List courses
+GET {{host}}/api/courses?limit=20
+Accept: application/json
+
+### Get course
+GET {{host}}/api/courses/00000000-0000-0000-0000-000000000000
+Accept: application/json
