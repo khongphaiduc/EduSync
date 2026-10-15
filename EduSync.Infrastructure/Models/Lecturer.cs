@@ -15,7 +15,6 @@ public partial class Lecturer
 
     public string? Phone { get; set; }
 
-    public string? AvatarUrl { get; set; }
 
     public virtual ICollection<CourseSection> CourseSections { get; set; } = new List<CourseSection>();
 

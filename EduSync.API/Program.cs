@@ -3,6 +3,8 @@ using System.Threading.RateLimiting;
 using EduSync.API.Common;
 using EduSync.Application.Services.Auth;
 using EduSync.Application.Services.Courses;
+using EduSync.Application.Services.Lecturers;
+using EduSync.Application.Services.Semesters;
 using EduSync.Application.Services.Students;
 using EduSync.Infrastructure;
 using EduSync.Infrastructure.Authentication;
@@ -119,6 +121,8 @@ public class Program
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
         builder.Services.AddProblemDetails();
         builder.Services.AddScoped<ICourseService, CourseService>();
+        builder.Services.AddScoped<ILecturerService, LecturerService>();
+        builder.Services.AddScoped<ISemesterService, SemesterService>();
         builder.Services.AddScoped<IStudentService, StudentService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddInfrastructure(

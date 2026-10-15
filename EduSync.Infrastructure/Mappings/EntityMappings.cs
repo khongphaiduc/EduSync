@@ -345,7 +345,6 @@ public static class EntityMappings
             LecturerCode = source.LecturerCode,
             FullName = source.FullName,
             Phone = source.Phone,
-            AvatarUrl = source.AvatarUrl,
         };
     }
 
@@ -360,7 +359,6 @@ public static class EntityMappings
             LecturerCode = source.LecturerCode,
             FullName = source.FullName,
             Phone = source.Phone,
-            AvatarUrl = source.AvatarUrl,
         };
     }
 

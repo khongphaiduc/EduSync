@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+Don't write the unit test for this project 
+
 ## Project Structure & Module Organization
 
 `EduSync.sln` contains five .NET 8 projects. `EduSync.API/` hosts ASP.NET Core startup, controllers, launch profiles, and app settings. `EduSync.Application/` has folders for DTOs, services, and shared application code. `EduSync.Domain/` has folders for entities, enums, and value objects. `EduSync.Infrastructure/Models/` contains the scaffolded EF Core entities and `MyFschoolDemoContext`. Keep HTTP concerns, including `ApiResponse<T>` in `EduSync.API/Common/`, in the API and database mapping in Infrastructure. Domain classes must end in `Entity` and must never reference or reuse EF models. Map between the two types in Infrastructure. The `Course` and authentication modules show the controller, service, repository, and mapping pattern. `EduSync.Tests/` contains xUnit tests; there is no separate asset directory.

@@ -10,6 +10,28 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
         Exception exception,
         CancellationToken cancellationToken)
     {
+        if (exception is SemesterException semesterException)
+        {
+            httpContext.Response.StatusCode = semesterException.Error == SemesterError.AlreadyExists
+                ? StatusCodes.Status409Conflict
+                : StatusCodes.Status400BadRequest;
+            await httpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object?>.Failed(semesterException.Message),
+                cancellationToken);
+            return true;
+        }
+
+        if (exception is CourseException courseException)
+        {
+            httpContext.Response.StatusCode = courseException.Error == CourseError.CodeAlreadyExists
+                ? StatusCodes.Status409Conflict
+                : StatusCodes.Status400BadRequest;
+            await httpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object?>.Failed(courseException.Message),
+                cancellationToken);
+            return true;
+        }
+
         if (exception is AuthException authException)
         {
             httpContext.Response.StatusCode = authException.Error switch
@@ -17,6 +39,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
                 AuthError.InvalidCredentials or AuthError.InvalidRefreshToken => StatusCodes.Status401Unauthorized,
                 AuthError.InactiveAccount => StatusCodes.Status403Forbidden,
                 AuthError.EmailAlreadyExists or AuthError.StudentCodeAlreadyExists
+                    or AuthError.LecturerCodeAlreadyExists
                     or AuthError.RegistrationConflict => StatusCodes.Status409Conflict,
                 AuthError.InvalidMajor or AuthError.InvalidRegistration => StatusCodes.Status400BadRequest,
                 _ => StatusCodes.Status400BadRequest

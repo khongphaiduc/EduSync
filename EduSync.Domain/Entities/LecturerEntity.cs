@@ -12,5 +12,4 @@ public class LecturerEntity
 
     public string? Phone { get; set; }
 
-    public string? AvatarUrl { get; set; }
 }

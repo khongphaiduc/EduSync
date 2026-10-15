@@ -298,7 +298,6 @@ public partial class MyFschoolDemoContext : DbContext
             entity.HasIndex(e => e.UserId, "UQ_Lecturers_UserId").IsUnique();
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newsequentialid())");
-            entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.FullName).HasMaxLength(150);
             entity.Property(e => e.LecturerCode)
                 .HasMaxLength(30)

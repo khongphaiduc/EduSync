@@ -53,14 +53,60 @@ Content-Type: application/json
 GET {{host}}/api/courses?limit=20
 Accept: application/json
 
+### Create course (Admin)
+POST {{host}}/api/courses
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "courseCode": "CS101",
+  "courseName": "Introduction to Programming",
+  "credits": 3,
+  "description": "Programming fundamentals"
+}
+
 ### Get course
 GET {{host}}/api/courses/00000000-0000-0000-0000-000000000000
 Accept: application/json
+
+### List semesters
+GET {{host}}/api/semesters
+Accept: application/json
+
+### Create semester (Admin)
+POST {{host}}/api/semesters
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Semester 1",
+  "academicYear": "2026-2027",
+  "startDate": "2026-09-01",
+  "endDate": "2027-01-15"
+}
 
 ### List students (Admin)
 GET {{host}}/api/students?page=1&pageSize=20
 Authorization: Bearer {{adminAccessToken}}
 Accept: application/json
+
+### List lecturers (Admin)
+GET {{host}}/api/lecturers?page=1&pageSize=20
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### Create lecturer (Admin)
+POST {{host}}/api/lecturers
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "email": "new.lecturer@example.com",
+  "password": "Password123!",
+  "lecturerCode": "LEC001",
+  "fullName": "Nguyen Van C",
+  "phone": "0900000002"
+}
 
 ### Create student (Admin; majorId must exist in the database)
 POST {{host}}/api/students

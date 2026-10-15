@@ -1,7 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using EduSync.API.Common;
+using EduSync.API.Contracts.Courses;
 using EduSync.Application.DTOs.Courses;
 using EduSync.Application.Services.Courses;
+using EduSync.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EduSync.API.Controllers;
@@ -10,6 +13,22 @@ namespace EduSync.API.Controllers;
 [Route("api/courses")]
 public sealed class CoursesController(ICourseService courses) : ControllerBase
 {
+    [HttpPost]
+    [Authorize(Roles = nameof(UserRole.Admin))]
+    public async Task<ActionResult<ApiResponse<CourseDto>>> Create(
+        CreateCourseRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new CreateCourseCommand(
+            request.CourseCode,
+            request.CourseName,
+            request.Credits,
+            request.Description);
+        var result = await courses.CreateAsync(command, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id },
+            ApiResponse<CourseDto>.Succeeded(result, "Course created."));
+    }
+
     [HttpGet]
     public async Task<ActionResult<ApiResponse<IReadOnlyList<CourseDto>>>> List(
         [FromQuery, Range(1, 100)] int limit = 20,

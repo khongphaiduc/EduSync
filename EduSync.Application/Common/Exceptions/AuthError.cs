@@ -7,6 +7,7 @@ public enum AuthError
     InvalidRefreshToken,
     EmailAlreadyExists,
     StudentCodeAlreadyExists,
+    LecturerCodeAlreadyExists,
     InvalidMajor,
     InvalidRegistration,
     RegistrationConflict
