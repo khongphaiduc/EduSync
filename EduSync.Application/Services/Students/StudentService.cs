@@ -85,6 +85,25 @@ public sealed class StudentService(
 
     public Task<StudentListDto> ListAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
+        ValidatePagination(page, pageSize);
+        return students.ListAsync(page, pageSize, cancellationToken);
+    }
+
+    public Task<StudentListDto> SearchAsync(
+        string search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        ValidatePagination(page, pageSize);
+        search = search.Trim();
+        if (search.Length is < 1 or > 150)
+        {
+            throw new ArgumentException("Search must be between 1 and 150 characters.", nameof(search));
+        }
+
+        return students.SearchAsync(search, page, pageSize, cancellationToken);
+    }
+
+    private static void ValidatePagination(int page, int pageSize)
+    {
         if (page < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(page), "Page must be at least 1.");
@@ -94,7 +113,5 @@ public sealed class StudentService(
         {
             throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be between 1 and 100.");
         }
-
-        return students.ListAsync(page, pageSize, cancellationToken);
     }
 }

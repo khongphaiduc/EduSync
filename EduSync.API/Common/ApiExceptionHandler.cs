@@ -32,6 +32,63 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             return true;
         }
 
+        if (exception is CourseSectionException sectionException)
+        {
+            httpContext.Response.StatusCode = sectionException.Error == CourseSectionError.AlreadyExists
+                ? StatusCodes.Status409Conflict
+                : StatusCodes.Status400BadRequest;
+            await httpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object?>.Failed(sectionException.Message),
+                cancellationToken);
+            return true;
+        }
+
+        if (exception is ClassSessionException sessionException)
+        {
+            httpContext.Response.StatusCode = sessionException.Error switch
+            {
+                ClassSessionError.SectionNotFound or ClassSessionError.SessionNotFound =>
+                    StatusCodes.Status404NotFound,
+                ClassSessionError.ScheduleConflict => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+            await httpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object?>.Failed(sessionException.Message, sessionException.Errors),
+                cancellationToken);
+            return true;
+        }
+
+        if (exception is EnrollmentException enrollmentException)
+        {
+            httpContext.Response.StatusCode = enrollmentException.Error switch
+            {
+                EnrollmentError.SectionNotFound or EnrollmentError.StudentNotFound =>
+                    StatusCodes.Status404NotFound,
+                EnrollmentError.NotAssigned => StatusCodes.Status403Forbidden,
+                EnrollmentError.AlreadyEnrolled or EnrollmentError.SectionClosed or EnrollmentError.SectionFull =>
+                    StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+            await httpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object?>.Failed(enrollmentException.Message),
+                cancellationToken);
+            return true;
+        }
+
+        if (exception is GradeComponentException componentException)
+        {
+            httpContext.Response.StatusCode = componentException.Error switch
+            {
+                GradeComponentError.SectionNotFound => StatusCodes.Status404NotFound,
+                GradeComponentError.AlreadyExists or GradeComponentError.WeightExceeded or GradeComponentError.Busy =>
+                    StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+            await httpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object?>.Failed(componentException.Message), cancellationToken);
+            return true;
+        }
+
         if (exception is AuthException authException)
         {
             httpContext.Response.StatusCode = authException.Error switch

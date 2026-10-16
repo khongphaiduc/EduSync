@@ -16,7 +16,12 @@ public static class DependencyInjection
 
         services.AddDbContext<MyFschoolDemoContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<ICourseRepository, CourseRepository>();
+        services.AddScoped<ICourseSectionRepository, CourseSectionRepository>();
+        services.AddScoped<IClassSessionRepository, ClassSessionRepository>();
+        services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+        services.AddScoped<IGradeComponentRepository, GradeComponentRepository>();
         services.AddScoped<ILecturerRepository, LecturerRepository>();
+        services.AddScoped<IRequestRepository, RequestRepository>();
         services.AddScoped<ISemesterRepository, SemesterRepository>();
         services.AddScoped<IStudentRepository, StudentRepository>();
         services.AddScoped<IAuthRepository, AuthRepository>();

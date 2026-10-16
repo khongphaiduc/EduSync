@@ -26,6 +26,3 @@ Use four spaces for C# indentation, PascalCase for types and public members, and
 
 This checkout has no Git history, so no established commit style can be confirmed. Use short, imperative subjects such as `Add enrollment validation`. Pull requests should describe the behavior, list verification commands, link an issue when available, and include request/response examples for API changes.
 
-## Security & Configuration
-
-Set `ConnectionStrings__DefaultConnection` and `Jwt__Key` in your local environment before running the API. Keep JWT access and refresh logic behind Application interfaces; store only refresh-token hashes. Keep credentials out of tracked `appsettings*.json` files and never commit production data.

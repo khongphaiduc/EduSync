@@ -1,6 +1,6 @@
 namespace EduSync.Domain.Entities;
 
-public class EnrollmentEntity
+public sealed class EnrollmentEntity
 {
     public Guid Id { get; set; }
 

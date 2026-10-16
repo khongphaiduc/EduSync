@@ -7,12 +7,28 @@ namespace EduSync.Infrastructure.Repositories;
 
 public sealed class StudentRepository(MyFschoolDemoContext context) : IStudentRepository
 {
-    public async Task<StudentListDto> ListAsync(
+    public Task<StudentListDto> ListAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken) =>
+        ListAsync(context.Students.AsNoTracking(), page, pageSize, cancellationToken);
+
+    public Task<StudentListDto> SearchAsync(
+        string search,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken) =>
+        ListAsync(context.Students.AsNoTracking()
+            .Where(student => student.StudentCode.Contains(search)
+                || student.FullName.Contains(search)),
+            page, pageSize, cancellationToken);
+
+    private static async Task<StudentListDto> ListAsync(
+        IQueryable<Student> query,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        var query = context.Students.AsNoTracking();
         var totalCount = await query.CountAsync(cancellationToken);
         var offset = ((long)page - 1) * pageSize;
         if (offset > int.MaxValue)

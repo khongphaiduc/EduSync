@@ -7,11 +7,11 @@ public sealed class MyFschoolDemoContextFactory : IDesignTimeDbContextFactory<My
 {
     public MyFschoolDemoContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings_DefaultConnection");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                "Set ConnectionStrings__DefaultConnection before running EF Core commands.");
+                "Set ConnectionStrings_DefaultConnection before running EF Core commands.");
         }
 
         var options = new DbContextOptionsBuilder<MyFschoolDemoContext>()

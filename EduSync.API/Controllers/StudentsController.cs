@@ -38,9 +38,12 @@ public sealed class StudentsController(IStudentService students) : ControllerBas
     public async Task<ActionResult<ApiResponse<StudentListDto>>> List(
         [FromQuery, Range(1, int.MaxValue)] int page = 1,
         [FromQuery, Range(1, 100)] int pageSize = 20,
+        [FromQuery, StringLength(150)] string? search = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await students.ListAsync(page, pageSize, cancellationToken);
+        var result = string.IsNullOrWhiteSpace(search)
+            ? await students.ListAsync(page, pageSize, cancellationToken)
+            : await students.SearchAsync(search, page, pageSize, cancellationToken);
         return Ok(ApiResponse<StudentListDto>.Succeeded(result));
     }
 }

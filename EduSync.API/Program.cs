@@ -1,25 +1,44 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using EduSync.API.Common;
+using EduSync.Application.Abstractions.Authentication;
+using EduSync.Application.Abstractions.Persistence;
 using EduSync.Application.Services.Auth;
+using EduSync.Application.Services.ClassSessions;
 using EduSync.Application.Services.Courses;
+using EduSync.Application.Services.CourseSections;
+using EduSync.Application.Services.Enrollments;
+using EduSync.Application.Services.GradeComponents;
 using EduSync.Application.Services.Lecturers;
+using EduSync.Application.Services.Requests;
 using EduSync.Application.Services.Semesters;
 using EduSync.Application.Services.Students;
 using EduSync.Infrastructure;
 using EduSync.Infrastructure.Authentication;
+using EduSync.Infrastructure.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace EduSync.API;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        var envPath = Path.Combine(builder.Environment.ContentRootPath, ".env");
+        if (!File.Exists(envPath))
+        {
+            envPath = Path.Combine(builder.Environment.ContentRootPath, "EduSync.API", ".env");
+        }
+
+        builder.Configuration.AddInMemoryCollection(
+            DotEnvConfiguration.Read(envPath));
+        builder.Configuration.AddEnvironmentVariables();
+        builder.Configuration.AddInMemoryCollection(DotEnvConfiguration.ReadEnvironment());
 
         builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
         {
@@ -43,7 +62,7 @@ public class Program
         if (string.IsNullOrWhiteSpace(jwt.Key))
         {
             throw new InvalidOperationException(
-                "Jwt:Key is missing. Configure it with User Secrets or Jwt__Key.");
+                "Jwt:Key is missing. Set Jwt_Key in EduSync.API/.env or the environment.");
         }
 
         if (string.IsNullOrWhiteSpace(jwt.Issuer)
@@ -121,15 +140,63 @@ public class Program
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
         builder.Services.AddProblemDetails();
         builder.Services.AddScoped<ICourseService, CourseService>();
+        builder.Services.AddScoped<ICourseSectionService, CourseSectionService>();
+        builder.Services.AddScoped<IClassSessionService, ClassSessionService>();
+        builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+        builder.Services.AddScoped<IGradeComponentService, GradeComponentService>();
         builder.Services.AddScoped<ILecturerService, LecturerService>();
+        builder.Services.AddScoped<IRequestService, RequestService>();
         builder.Services.AddScoped<ISemesterService, SemesterService>();
         builder.Services.AddScoped<IStudentService, StudentService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
-        builder.Services.AddInfrastructure(
-            builder.Configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required."));
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                $"ConnectionStrings_DefaultConnection is missing. Set it in {envPath} or the environment.");
+        }
+
+        builder.Services.AddInfrastructure(connectionString);
 
         var app = builder.Build();
+
+        await using (var scope = app.Services.CreateAsyncScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<MyFschoolDemoContext>();
+            await dbContext.Database.MigrateAsync();
+            if (app.Configuration.GetValue<bool>("Seed:HihiStudents"))
+            {
+                var count = await HihiStudentSeeder.SeedAsync(
+                    dbContext, scope.ServiceProvider.GetRequiredService<IPasswordService>());
+                app.Logger.LogInformation("Added {Count} HIHI demo enrollments.", count);
+                return;
+            }
+            var created = await AdminAccountBootstrap.SeedAsync(
+                app.Configuration,
+                scope.ServiceProvider.GetRequiredService<IAuthRepository>(),
+                scope.ServiceProvider.GetRequiredService<IPasswordService>());
+            if (created)
+            {
+                app.Logger.LogInformation("Initial admin account created.");
+            }
+
+            var lecturerCreated = await LecturerAccountBootstrap.SeedAsync(
+                app.Configuration,
+                scope.ServiceProvider.GetRequiredService<IAuthRepository>(),
+                scope.ServiceProvider.GetRequiredService<ILecturerService>());
+            if (lecturerCreated)
+            {
+                app.Logger.LogInformation("Initial lecturer account created.");
+            }
+
+            if (app.Configuration.GetValue<bool>("Seed:DemoRequests"))
+            {
+                var count = await DemoRequestSeeder.SeedAsync(
+                    dbContext,
+                    scope.ServiceProvider.GetRequiredService<IPasswordService>());
+                app.Logger.LogInformation("Added {Count} demo requests.", count);
+            }
+        }
 
         app.UseExceptionHandler();
         app.UseStatusCodePages(async context =>

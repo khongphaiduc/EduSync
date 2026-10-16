@@ -1,6 +1,7 @@
 @host = http://localhost:5271
 @accessToken = paste_access_token_here
 @adminAccessToken = paste_admin_access_token_here
+@lecturerAccessToken = paste_lecturer_access_token_here
 @refreshToken = paste_refresh_token_here
 
 ### Register a student (majorId must exist in the database)
@@ -69,6 +70,88 @@ Content-Type: application/json
 GET {{host}}/api/courses/00000000-0000-0000-0000-000000000000
 Accept: application/json
 
+### List course sections (Admin)
+GET {{host}}/api/course-sections?page=1&pageSize=20
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### Create course section (Admin; use existing course, semester, and lecturer IDs)
+POST {{host}}/api/course-sections
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "courseId": "00000000-0000-0000-0000-000000000001",
+  "semesterId": "00000000-0000-0000-0000-000000000002",
+  "lecturerId": "00000000-0000-0000-0000-000000000003",
+  "sectionCode": "CS101-01",
+  "capacity": 40
+}
+
+### Generate weekly class sessions (Admin; replace section ID)
+POST {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/sessions/generate
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "fromDate": "2026-09-01",
+  "toDate": "2026-12-15",
+  "timeZoneId": "Asia/Ho_Chi_Minh",
+  "weeklySlots": [
+    {
+      "dayOfWeek": "Monday",
+      "startTime": "07:30:00",
+      "endTime": "10:00:00",
+      "room": "A101"
+    },
+    {
+      "dayOfWeek": "Thursday",
+      "startTime": "13:00:00",
+      "endTime": "15:30:00",
+      "room": "A101"
+    }
+  ],
+  "excludeDates": ["2026-09-02"]
+}
+
+### List class sessions for a section (Admin; replace section ID)
+GET {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/sessions?from=2026-09-01&to=2026-12-15&timeZoneId=Asia/Ho_Chi_Minh
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### Add a student to a course section (Admin; replace section and student IDs)
+POST {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/students
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "studentId": "00000000-0000-0000-0000-000000000002"
+}
+
+### List students enrolled in a course section (Admin; replace section ID)
+GET {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/students?page=1&pageSize=20
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### List students in one of the signed-in lecturer's course sections
+GET {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/students?page=1&pageSize=20
+Authorization: Bearer {{lecturerAccessToken}}
+Accept: application/json
+
+### Update or cancel one class session (Admin; replace session ID)
+PATCH {{host}}/api/class-sessions/00000000-0000-0000-0000-000000000001
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "startAtUtc": "2026-09-03T06:00:00Z",
+  "endAtUtc": "2026-09-03T08:30:00Z",
+  "room": "A102",
+  "topic": "Programming basics",
+  "status": "Scheduled",
+  "timeZoneId": "Asia/Ho_Chi_Minh"
+}
+
 ### List semesters
 GET {{host}}/api/semesters
 Accept: application/json
@@ -85,14 +168,40 @@ Content-Type: application/json
   "endDate": "2027-01-15"
 }
 
+### Create a grade component (Admin; replace section ID; weight is a percentage)
+POST {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/grade-components
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Giữa kỳ",
+  "weight": 30,
+  "maxScore": 10
+}
+
 ### List students (Admin)
 GET {{host}}/api/students?page=1&pageSize=20
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### Search students by name or student code (Admin)
+GET {{host}}/api/students?search=Nguyen&page=1&pageSize=20
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### List requests (Admin; optional filters: status, requestType, studentId)
+GET {{host}}/api/requests?page=1&pageSize=20&status=Pending
 Authorization: Bearer {{adminAccessToken}}
 Accept: application/json
 
 ### List lecturers (Admin)
 GET {{host}}/api/lecturers?page=1&pageSize=20
 Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### List course sections assigned to the signed-in lecturer
+GET {{host}}/api/lecturers/me/course-sections?page=1&pageSize=20
+Authorization: Bearer {{lecturerAccessToken}}
 Accept: application/json
 
 ### Create lecturer (Admin)
