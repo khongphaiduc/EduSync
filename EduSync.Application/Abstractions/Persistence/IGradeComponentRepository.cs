@@ -1,3 +1,4 @@
+using EduSync.Application.DTOs.GradeComponents;
 using EduSync.Domain.Entities;
 
 namespace EduSync.Application.Abstractions.Persistence;
@@ -11,6 +12,9 @@ public interface IGradeComponentRepository
     Task<bool> NameExistsAsync(Guid sectionId, string name, CancellationToken cancellationToken);
 
     Task<decimal> GetTotalWeightAsync(Guid sectionId, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<GradeComponentDto>> ListAsync(
+        Guid sectionId, CancellationToken cancellationToken);
 
     Task CreateAsync(GradeComponentEntity component, CancellationToken cancellationToken);
 }

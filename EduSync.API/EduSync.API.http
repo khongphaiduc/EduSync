@@ -168,6 +168,21 @@ Content-Type: application/json
   "endDate": "2027-01-15"
 }
 
+### List grade components for a course section (Admin; replace section ID)
+GET {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/grade-components
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### List student grades in a course section (Admin; replace section ID)
+GET {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/grades?page=1&pageSize=20
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### List student grades in an assigned course section (Lecturer; replace section ID)
+GET {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/grades?page=1&pageSize=20
+Authorization: Bearer {{lecturerAccessToken}}
+Accept: application/json
+
 ### Create a grade component (Admin; replace section ID; weight is a percentage)
 POST {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/grade-components
 Authorization: Bearer {{adminAccessToken}}
@@ -203,6 +218,41 @@ Accept: application/json
 GET {{host}}/api/lecturers/me/course-sections?page=1&pageSize=20
 Authorization: Bearer {{lecturerAccessToken}}
 Accept: application/json
+
+### List teaching schedule for a lecturer (Admin; replace lecturer ID)
+GET {{host}}/api/lecturers/00000000-0000-0000-0000-000000000003/schedule?from=2026-09-01&to=2026-09-30&timeZoneId=Asia/Ho_Chi_Minh
+Authorization: Bearer {{adminAccessToken}}
+Accept: application/json
+
+### List teaching schedule for the signed-in lecturer
+GET {{host}}/api/lecturers/me/schedule?from=2026-09-01&to=2026-09-30&timeZoneId=Asia/Ho_Chi_Minh
+Authorization: Bearer {{lecturerAccessToken}}
+Accept: application/json
+
+### Open a class session's attendance roster (Lecturer; replace session ID from schedule)
+GET {{host}}/api/class-sessions/00000000-0000-0000-0000-000000000001/attendance
+Authorization: Bearer {{lecturerAccessToken}}
+Accept: application/json
+
+### Mark attendance for students in the selected class session (Lecturer)
+PUT {{host}}/api/class-sessions/00000000-0000-0000-0000-000000000001/attendance
+Authorization: Bearer {{lecturerAccessToken}}
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "enrollmentId": "00000000-0000-0000-0000-000000000002",
+      "status": "Present",
+      "note": null
+    },
+    {
+      "enrollmentId": "00000000-0000-0000-0000-000000000003",
+      "status": "Absent",
+      "note": "Reported absence"
+    }
+  ]
+}
 
 ### Create lecturer (Admin)
 POST {{host}}/api/lecturers

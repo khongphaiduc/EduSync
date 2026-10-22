@@ -1,3 +1,4 @@
+using EduSync.Application.DTOs.ClassSessions;
 using EduSync.Domain.Entities;
 
 namespace EduSync.Application.Abstractions.Persistence;
@@ -10,6 +11,16 @@ public interface IClassSessionRepository
 
     Task<IReadOnlyList<ClassSessionEntity>> ListAsync(
         Guid sectionId,
+        DateTime fromUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken);
+
+    Task<bool> LecturerExistsAsync(Guid lecturerId, CancellationToken cancellationToken);
+
+    Task<Guid?> GetLecturerIdForUserAsync(Guid userId, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<LecturerScheduleItemDto>> ListForLecturerAsync(
+        Guid lecturerId,
         DateTime fromUtc,
         DateTime toExclusiveUtc,
         CancellationToken cancellationToken);

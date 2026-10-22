@@ -147,11 +147,12 @@ public sealed class ClassSessionService(IClassSessionRepository sessions) : ICla
         string timeZoneId,
         CancellationToken cancellationToken = default)
     {
-        if (courseSectionId == Guid.Empty || fromDate == default || toDate < fromDate
-            || toDate == DateOnly.MaxValue || toDate.DayNumber - fromDate.DayNumber > 365)
+        if (courseSectionId == Guid.Empty)
         {
             throw Invalid("Date range is invalid.");
         }
+
+        var (fromUtc, toUtc) = GetUtcRange(fromDate, toDate, timeZoneId);
 
         if (await sessions.GetSectionAsync(courseSectionId, cancellationToken) is null)
         {
@@ -159,11 +160,49 @@ public sealed class ClassSessionService(IClassSessionRepository sessions) : ICla
                 "Course section not found.");
         }
 
-        var timeZone = ResolveTimeZone(timeZoneId);
-        var fromUtc = ToUtc(fromDate, TimeOnly.MinValue, timeZone);
-        var toUtc = ToUtc(toDate.AddDays(1), TimeOnly.MinValue, timeZone);
         var items = await sessions.ListAsync(courseSectionId, fromUtc, toUtc, cancellationToken);
         return items.Select(ToDto).ToArray();
+    }
+
+    public async Task<IReadOnlyList<LecturerScheduleItemDto>> ListForLecturerAsync(
+        Guid lecturerId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        string timeZoneId,
+        CancellationToken cancellationToken = default)
+    {
+        if (lecturerId == Guid.Empty)
+        {
+            throw Invalid("Lecturer ID is invalid.");
+        }
+
+        var (fromUtc, toUtc) = GetUtcRange(fromDate, toDate, timeZoneId);
+        if (!await sessions.LecturerExistsAsync(lecturerId, cancellationToken))
+        {
+            throw new ClassSessionException(ClassSessionError.LecturerNotFound,
+                "Lecturer not found.");
+        }
+
+        return await sessions.ListForLecturerAsync(lecturerId, fromUtc, toUtc, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<LecturerScheduleItemDto>> ListForCurrentLecturerAsync(
+        Guid userId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        string timeZoneId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+        {
+            throw Invalid("User ID is invalid.");
+        }
+
+        var (fromUtc, toUtc) = GetUtcRange(fromDate, toDate, timeZoneId);
+        var lecturerId = await sessions.GetLecturerIdForUserAsync(userId, cancellationToken)
+            ?? throw new ClassSessionException(ClassSessionError.LecturerNotFound,
+                "Lecturer not found.");
+        return await sessions.ListForLecturerAsync(lecturerId, fromUtc, toUtc, cancellationToken);
     }
 
     public async Task<ClassSessionDto> UpdateAsync(
@@ -251,6 +290,20 @@ public sealed class ClassSessionService(IClassSessionRepository sessions) : ICla
 
             return ToDto(updated);
         }, cancellationToken);
+    }
+
+    private static (DateTime FromUtc, DateTime ToExclusiveUtc) GetUtcRange(
+        DateOnly fromDate, DateOnly toDate, string timeZoneId)
+    {
+        if (fromDate == default || toDate < fromDate || toDate == DateOnly.MaxValue
+            || toDate.DayNumber - fromDate.DayNumber > 365)
+        {
+            throw Invalid("Date range is invalid.");
+        }
+
+        var timeZone = ResolveTimeZone(timeZoneId);
+        return (ToUtc(fromDate, TimeOnly.MinValue, timeZone),
+            ToUtc(toDate.AddDays(1), TimeOnly.MinValue, timeZone));
     }
 
     private static TimeZoneInfo ResolveTimeZone(string timeZoneId)

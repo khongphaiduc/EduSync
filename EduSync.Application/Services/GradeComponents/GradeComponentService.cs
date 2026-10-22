@@ -7,6 +7,24 @@ namespace EduSync.Application.Services.GradeComponents;
 
 public sealed class GradeComponentService(IGradeComponentRepository components) : IGradeComponentService
 {
+    public async Task<IReadOnlyList<GradeComponentDto>> ListAsync(
+        Guid sectionId, CancellationToken cancellationToken = default)
+    {
+        if (sectionId == Guid.Empty)
+        {
+            throw new GradeComponentException(GradeComponentError.InvalidData,
+                "Course section ID is required.");
+        }
+
+        if (!await components.SectionExistsAsync(sectionId, cancellationToken))
+        {
+            throw new GradeComponentException(GradeComponentError.SectionNotFound,
+                "Course section does not exist.");
+        }
+
+        return await components.ListAsync(sectionId, cancellationToken);
+    }
+
     public Task<GradeComponentDto> CreateAsync(
         CreateGradeComponentCommand command, CancellationToken cancellationToken = default)
     {

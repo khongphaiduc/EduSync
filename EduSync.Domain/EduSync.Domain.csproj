@@ -7,9 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ValueObject\**" />
+    <EmbeddedResource Remove="ValueObject\**" />
+    <None Remove="ValueObject\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Entities\" />
     <Folder Include="Enums\" />
-    <Folder Include="ValueObject\" />
   </ItemGroup>
 
 </Project>

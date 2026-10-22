@@ -15,6 +15,20 @@ public interface IClassSessionService
         string timeZoneId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<LecturerScheduleItemDto>> ListForLecturerAsync(
+        Guid lecturerId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        string timeZoneId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<LecturerScheduleItemDto>> ListForCurrentLecturerAsync(
+        Guid userId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        string timeZoneId,
+        CancellationToken cancellationToken = default);
+
     Task<ClassSessionDto> UpdateAsync(
         UpdateClassSessionCommand command,
         CancellationToken cancellationToken = default);

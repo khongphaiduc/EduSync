@@ -18,8 +18,10 @@ public static class DependencyInjection
         services.AddScoped<ICourseRepository, CourseRepository>();
         services.AddScoped<ICourseSectionRepository, CourseSectionRepository>();
         services.AddScoped<IClassSessionRepository, ClassSessionRepository>();
+        services.AddScoped<IAttendanceRepository, AttendanceRepository>();
         services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
         services.AddScoped<IGradeComponentRepository, GradeComponentRepository>();
+        services.AddScoped<ISectionGradeRepository, SectionGradeRepository>();
         services.AddScoped<ILecturerRepository, LecturerRepository>();
         services.AddScoped<IRequestRepository, RequestRepository>();
         services.AddScoped<ISemesterRepository, SemesterRepository>();

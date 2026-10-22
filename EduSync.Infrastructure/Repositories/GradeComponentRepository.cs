@@ -1,5 +1,6 @@
 using EduSync.Application.Abstractions.Persistence;
 using EduSync.Application.Common.Exceptions;
+using EduSync.Application.DTOs.GradeComponents;
 using EduSync.Domain.Entities;
 using EduSync.Infrastructure.Mappings;
 using EduSync.Infrastructure.Models;
@@ -45,6 +46,22 @@ public sealed class GradeComponentRepository(MyFschoolDemoContext context) : IGr
     public async Task<decimal> GetTotalWeightAsync(Guid sectionId, CancellationToken cancellationToken) =>
         await context.GradeComponents.Where(component => component.CourseSectionId == sectionId)
             .SumAsync(component => (decimal?)component.Weight, cancellationToken) ?? 0m;
+
+    public async Task<IReadOnlyList<GradeComponentDto>> ListAsync(
+        Guid sectionId, CancellationToken cancellationToken)
+    {
+        return await context.GradeComponents.AsNoTracking()
+            .Where(component => component.CourseSectionId == sectionId)
+            .OrderBy(component => component.Name)
+            .ThenBy(component => component.Id)
+            .Select(component => new GradeComponentDto(
+                component.Id,
+                component.CourseSectionId,
+                component.Name,
+                component.Weight,
+                component.MaxScore))
+            .ToArrayAsync(cancellationToken);
+    }
 
     public async Task CreateAsync(GradeComponentEntity component, CancellationToken cancellationToken)
     {

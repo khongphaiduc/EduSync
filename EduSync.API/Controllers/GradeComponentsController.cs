@@ -13,6 +13,14 @@ namespace EduSync.API.Controllers;
 [Route("api/course-sections/{sectionId:guid}/grade-components")]
 public sealed class GradeComponentsController(IGradeComponentService components) : ControllerBase
 {
+    [HttpGet]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<GradeComponentDto>>>> List(
+        Guid sectionId, CancellationToken cancellationToken)
+    {
+        var result = await components.ListAsync(sectionId, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<GradeComponentDto>>.Succeeded(result));
+    }
+
     [HttpPost]
     public async Task<ActionResult<ApiResponse<GradeComponentDto>>> Create(
         Guid sectionId, CreateGradeComponentRequest request, CancellationToken cancellationToken)

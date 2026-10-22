@@ -10,6 +10,20 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
         Exception exception,
         CancellationToken cancellationToken)
     {
+        if (exception is AttendanceException attendanceException)
+        {
+            httpContext.Response.StatusCode = attendanceException.Error switch
+            {
+                AttendanceError.SessionNotFound => StatusCodes.Status404NotFound,
+                AttendanceError.NotAssigned => StatusCodes.Status403Forbidden,
+                AttendanceError.SessionCancelled => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+            await httpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object?>.Failed(attendanceException.Message), cancellationToken);
+            return true;
+        }
+
         if (exception is SemesterException semesterException)
         {
             httpContext.Response.StatusCode = semesterException.Error == SemesterError.AlreadyExists
@@ -47,7 +61,8 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
         {
             httpContext.Response.StatusCode = sessionException.Error switch
             {
-                ClassSessionError.SectionNotFound or ClassSessionError.SessionNotFound =>
+                ClassSessionError.SectionNotFound or ClassSessionError.LecturerNotFound
+                    or ClassSessionError.SessionNotFound =>
                     StatusCodes.Status404NotFound,
                 ClassSessionError.ScheduleConflict => StatusCodes.Status409Conflict,
                 _ => StatusCodes.Status400BadRequest
@@ -86,6 +101,19 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             };
             await httpContext.Response.WriteAsJsonAsync(
                 ApiResponse<object?>.Failed(componentException.Message), cancellationToken);
+            return true;
+        }
+
+        if (exception is GradeException gradeException)
+        {
+            httpContext.Response.StatusCode = gradeException.Error switch
+            {
+                GradeError.SectionNotFound => StatusCodes.Status404NotFound,
+                GradeError.NotAssigned => StatusCodes.Status403Forbidden,
+                _ => StatusCodes.Status400BadRequest
+            };
+            await httpContext.Response.WriteAsJsonAsync(
+                ApiResponse<object?>.Failed(gradeException.Message), cancellationToken);
             return true;
         }
 

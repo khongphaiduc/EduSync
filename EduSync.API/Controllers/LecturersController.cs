@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using EduSync.API.Common;
 using EduSync.API.Contracts.Lecturers;
+using EduSync.Application.DTOs.ClassSessions;
 using EduSync.Application.DTOs.Lecturers;
+using EduSync.Application.Services.ClassSessions;
 using EduSync.Application.Services.Lecturers;
 using EduSync.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -12,8 +14,23 @@ namespace EduSync.API.Controllers;
 [ApiController]
 [Authorize(Roles = nameof(UserRole.Admin))]
 [Route("api/lecturers")]
-public sealed class LecturersController(ILecturerService lecturers) : ControllerBase
+public sealed class LecturersController(
+    ILecturerService lecturers,
+    IClassSessionService sessions) : ControllerBase
 {
+    [HttpGet("{lecturerId:guid}/schedule")]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<LecturerScheduleItemDto>>>> ListSchedule(
+        Guid lecturerId,
+        [FromQuery] DateOnly from,
+        [FromQuery] DateOnly to,
+        [FromQuery] string timeZoneId = "Asia/Ho_Chi_Minh",
+        CancellationToken cancellationToken = default)
+    {
+        var result = await sessions.ListForLecturerAsync(
+            lecturerId, from, to, timeZoneId, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<LecturerScheduleItemDto>>.Succeeded(result));
+    }
+
     [HttpPost]
     public async Task<ActionResult<ApiResponse<LecturerCreatedDto>>> Create(
         CreateLecturerRequest request,

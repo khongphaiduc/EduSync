@@ -1,5 +1,6 @@
 using EduSync.Application.Abstractions.Persistence;
 using EduSync.Application.Common.Exceptions;
+using EduSync.Application.DTOs.ClassSessions;
 using EduSync.Domain.Entities;
 using EduSync.Infrastructure.Mappings;
 using EduSync.Infrastructure.Models;
@@ -40,6 +41,44 @@ public sealed class ClassSessionRepository(MyFschoolDemoContext context) : IClas
             .ThenBy(session => session.Id)
             .ToListAsync(cancellationToken);
         return models.Select(model => model.ToDomainEntity()).ToArray();
+    }
+
+    public Task<bool> LecturerExistsAsync(Guid lecturerId, CancellationToken cancellationToken) =>
+        context.Lecturers.AsNoTracking()
+            .AnyAsync(lecturer => lecturer.Id == lecturerId, cancellationToken);
+
+    public Task<Guid?> GetLecturerIdForUserAsync(Guid userId, CancellationToken cancellationToken) =>
+        context.Lecturers.AsNoTracking()
+            .Where(lecturer => lecturer.UserId == userId)
+            .Select(lecturer => (Guid?)lecturer.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<LecturerScheduleItemDto>> ListForLecturerAsync(
+        Guid lecturerId,
+        DateTime fromUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken)
+    {
+        return await context.ClassSessions.AsNoTracking()
+            .Where(session => session.CourseSection.LecturerId == lecturerId
+                && session.StartAt < toExclusiveUtc && session.EndAt > fromUtc)
+            .OrderBy(session => session.StartAt)
+            .ThenBy(session => session.Id)
+            .Select(session => new LecturerScheduleItemDto(
+                session.Id,
+                session.CourseSectionId,
+                session.CourseSection.SectionCode,
+                session.CourseSection.CourseId,
+                session.CourseSection.Course.CourseCode,
+                session.CourseSection.Course.CourseName,
+                session.CourseSection.SemesterId,
+                session.CourseSection.Semester.Name,
+                DateTime.SpecifyKind(session.StartAt, DateTimeKind.Utc),
+                DateTime.SpecifyKind(session.EndAt, DateTimeKind.Utc),
+                session.Room,
+                session.Topic,
+                session.Status))
+            .ToArrayAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<ExistingScheduleSession>> FindOverlapsAsync(
