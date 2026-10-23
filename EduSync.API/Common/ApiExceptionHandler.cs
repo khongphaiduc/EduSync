@@ -110,6 +110,8 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             {
                 GradeError.SectionNotFound => StatusCodes.Status404NotFound,
                 GradeError.NotAssigned => StatusCodes.Status403Forbidden,
+                GradeError.EnrollmentNotInSection or GradeError.ComponentNotInSection =>
+                    StatusCodes.Status400BadRequest,
                 _ => StatusCodes.Status400BadRequest
             };
             await httpContext.Response.WriteAsJsonAsync(

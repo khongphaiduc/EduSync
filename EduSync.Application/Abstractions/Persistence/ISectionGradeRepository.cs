@@ -8,4 +8,7 @@ public interface ISectionGradeRepository
 
     Task<SectionGradeListDto> ListAsync(
         Guid sectionId, int page, int pageSize, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<SavedGradeDto>> SaveAsync(
+        Guid sectionId, IReadOnlyList<SaveGradeItem> items, CancellationToken cancellationToken);
 }

@@ -1,6 +1,9 @@
 using EduSync.Application.Abstractions.Persistence;
+using EduSync.Application.Common.Exceptions;
 using EduSync.Application.DTOs.GradeComponents;
 using EduSync.Application.DTOs.Grades;
+using EduSync.Domain.Entities;
+using EduSync.Infrastructure.Mappings;
 using EduSync.Infrastructure.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -100,5 +103,97 @@ public sealed class SectionGradeRepository(MyFschoolDemoContext context) : ISect
             }).ToArray())).ToArray();
 
         return new SectionGradeListDto(sectionId, components, students, page, pageSize, totalCount);
+    }
+
+    public async Task<IReadOnlyList<SavedGradeDto>> SaveAsync(
+        Guid sectionId, IReadOnlyList<SaveGradeItem> items, CancellationToken cancellationToken)
+    {
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        var resource = $"EduSync.Grades.{sectionId:N}";
+        await context.Database.ExecuteSqlInterpolatedAsync($"""
+            DECLARE @result int;
+            EXEC @result = sp_getapplock
+                @Resource = {resource},
+                @LockMode = 'Exclusive',
+                @LockOwner = 'Transaction',
+                @LockTimeout = 10000;
+            IF @result < 0 THROW 51003, 'Could not acquire grade lock.', 1;
+            """, cancellationToken);
+
+        var enrollmentIds = items.Select(item => item.EnrollmentId).Distinct().ToArray();
+        var componentIds = items.Select(item => item.GradeComponentId).Distinct().ToArray();
+        var validEnrollmentIds = await context.Enrollments.AsNoTracking()
+            .Where(enrollment => enrollment.CourseSectionId == sectionId
+                && enrollmentIds.Contains(enrollment.Id))
+            .Select(enrollment => enrollment.Id)
+            .ToArrayAsync(cancellationToken);
+        if (validEnrollmentIds.Length != enrollmentIds.Length)
+        {
+            throw new GradeException(GradeError.EnrollmentNotInSection,
+                "An enrollment does not belong to this course section.");
+        }
+
+        var componentScores = await context.GradeComponents.AsNoTracking()
+            .Where(component => component.CourseSectionId == sectionId
+                && componentIds.Contains(component.Id))
+            .Select(component => new { component.Id, component.MaxScore })
+            .ToDictionaryAsync(component => component.Id, component => component.MaxScore, cancellationToken);
+        if (componentScores.Count != componentIds.Length)
+        {
+            throw new GradeException(GradeError.ComponentNotInSection,
+                "A grade component does not belong to this course section.");
+        }
+
+        if (items.Any(item => item.Score > componentScores[item.GradeComponentId]))
+        {
+            throw new GradeException(GradeError.InvalidData,
+                "A score exceeds the grade component maximum.");
+        }
+
+        var existing = await context.Grades
+            .Where(grade => enrollmentIds.Contains(grade.EnrollmentId)
+                && componentIds.Contains(grade.GradeComponentId))
+            .ToDictionaryAsync(grade => (grade.EnrollmentId, grade.GradeComponentId), cancellationToken);
+        var now = DateTime.UtcNow;
+        var result = new List<SavedGradeDto>(items.Count);
+        foreach (var item in items)
+        {
+            if (!existing.TryGetValue((item.EnrollmentId, item.GradeComponentId), out var grade))
+            {
+                if (item.Score is null)
+                {
+                    result.Add(new SavedGradeDto(item.EnrollmentId, item.GradeComponentId,
+                        null, null, null, null));
+                    continue;
+                }
+
+                var entity = new GradeEntity
+                {
+                    Id = Guid.NewGuid(),
+                    EnrollmentId = item.EnrollmentId,
+                    GradeComponentId = item.GradeComponentId,
+                    Score = item.Score,
+                    GradedAt = now,
+                    UpdatedAt = now
+                };
+                grade = entity.ToDatabaseModel();
+                context.Grades.Add(grade);
+            }
+            else
+            {
+                grade.Score = item.Score;
+                grade.GradedAt = item.Score is null ? null : grade.GradedAt ?? now;
+                grade.UpdatedAt = now;
+            }
+
+            result.Add(new SavedGradeDto(item.EnrollmentId, item.GradeComponentId,
+                grade.Id, grade.Score, grade.GradedAt is null ? null :
+                    DateTime.SpecifyKind(grade.GradedAt.Value, DateTimeKind.Utc),
+                DateTime.SpecifyKind(grade.UpdatedAt!.Value, DateTimeKind.Utc)));
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
 }

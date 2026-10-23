@@ -12,6 +12,7 @@ using EduSync.Application.Services.Enrollments;
 using EduSync.Application.Services.GradeComponents;
 using EduSync.Application.Services.Grades;
 using EduSync.Application.Services.Lecturers;
+using EduSync.Application.Services.Majors;
 using EduSync.Application.Services.Requests;
 using EduSync.Application.Services.Semesters;
 using EduSync.Application.Services.Students;
@@ -149,6 +150,7 @@ public class Program
         builder.Services.AddScoped<IGradeComponentService, GradeComponentService>();
         builder.Services.AddScoped<ISectionGradeService, SectionGradeService>();
         builder.Services.AddScoped<ILecturerService, LecturerService>();
+        builder.Services.AddScoped<IMajorService, MajorService>();
         builder.Services.AddScoped<IRequestService, RequestService>();
         builder.Services.AddScoped<ISemesterService, SemesterService>();
         builder.Services.AddScoped<IStudentService, StudentService>();
@@ -167,7 +169,7 @@ public class Program
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<MyFschoolDemoContext>();
-            await dbContext.Database.MigrateAsync();
+              await dbContext.Database.MigrateAsync();
             if (app.Configuration.GetValue<bool>("Seed:HihiStudents"))
             {
                 var count = await HihiStudentSeeder.SeedAsync(
@@ -215,7 +217,10 @@ public class Program
 
             await response.WriteAsJsonAsync(ApiResponse<object?>.Failed(message));
         });
-        app.UseHttpsRedirection();
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
         app.UseRouting();
         app.UseCors("Frontend");
         app.UseRateLimiter();

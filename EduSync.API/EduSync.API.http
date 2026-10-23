@@ -4,6 +4,10 @@
 @lecturerAccessToken = paste_lecturer_access_token_here
 @refreshToken = paste_refresh_token_here
 
+### List majors (use an id as majorId when registering or creating a student)
+GET {{host}}/api/majors
+Accept: application/json
+
 ### Register a student (majorId must exist in the database)
 POST {{host}}/api/auth/register
 Content-Type: application/json
@@ -182,6 +186,26 @@ Accept: application/json
 GET {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/grades?page=1&pageSize=20
 Authorization: Bearer {{lecturerAccessToken}}
 Accept: application/json
+
+### Save student grades (Admin or assigned Lecturer; replace section, enrollment, and component IDs)
+PUT {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/grades
+Authorization: Bearer {{lecturerAccessToken}}
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "enrollmentId": "00000000-0000-0000-0000-000000000002",
+      "gradeComponentId": "00000000-0000-0000-0000-000000000003",
+      "score": 8.5
+    },
+    {
+      "enrollmentId": "00000000-0000-0000-0000-000000000004",
+      "gradeComponentId": "00000000-0000-0000-0000-000000000003",
+      "score": null
+    }
+  ]
+}
 
 ### Create a grade component (Admin; replace section ID; weight is a percentage)
 POST {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/grade-components

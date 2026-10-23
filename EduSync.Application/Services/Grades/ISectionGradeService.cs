@@ -10,4 +10,10 @@ public interface ISectionGradeService
         int pageSize,
         Guid? lecturerUserId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<SavedGradeDto>> SaveAsync(
+        Guid sectionId,
+        Guid? lecturerUserId,
+        IReadOnlyList<SaveGradeItem> items,
+        CancellationToken cancellationToken = default);
 }
