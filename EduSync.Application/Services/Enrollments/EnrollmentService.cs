@@ -45,12 +45,13 @@ public sealed class EnrollmentService(IEnrollmentRepository enrollments) : IEnro
     }
 
     public Task<EnrollmentDto> AddStudentAsync(
-        Guid sectionId, Guid studentId, CancellationToken cancellationToken = default)
+        Guid sectionId, string studentCode, CancellationToken cancellationToken = default)
     {
-        if (sectionId == Guid.Empty || studentId == Guid.Empty)
+        studentCode = studentCode?.Trim() ?? string.Empty;
+        if (sectionId == Guid.Empty || string.IsNullOrWhiteSpace(studentCode) || studentCode.Length > 30)
         {
             throw new EnrollmentException(EnrollmentError.InvalidData,
-                "Course section ID and student ID are required.");
+                "Course section ID and a valid student code are required.");
         }
 
         return enrollments.WithSectionLockAsync(sectionId, async () =>
@@ -58,11 +59,11 @@ public sealed class EnrollmentService(IEnrollmentRepository enrollments) : IEnro
             var section = await enrollments.GetSectionAsync(sectionId, cancellationToken)
                 ?? throw new EnrollmentException(EnrollmentError.SectionNotFound,
                     "Course section does not exist.");
-            var student = await enrollments.GetStudentAsync(studentId, cancellationToken)
+            var student = await enrollments.GetStudentByCodeAsync(studentCode, cancellationToken)
                 ?? throw new EnrollmentException(EnrollmentError.StudentNotFound,
                     "Student does not exist.");
 
-            if (await enrollments.ExistsAsync(sectionId, studentId, cancellationToken))
+            if (await enrollments.ExistsAsync(sectionId, student.Id, cancellationToken))
             {
                 throw new EnrollmentException(EnrollmentError.AlreadyEnrolled,
                     "Student is already enrolled in this course section.");
@@ -89,7 +90,7 @@ public sealed class EnrollmentService(IEnrollmentRepository enrollments) : IEnro
             var enrollment = new EnrollmentEntity
             {
                 Id = Guid.NewGuid(),
-                StudentId = studentId,
+                StudentId = student.Id,
                 CourseSectionId = sectionId,
                 EnrolledAt = DateTime.UtcNow,
                 Status = "Registered"

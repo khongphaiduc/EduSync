@@ -11,6 +11,11 @@ public interface ISectionGradeService
         Guid? lecturerUserId,
         CancellationToken cancellationToken = default);
 
+    Task<StudentSectionGradesDto> GetForStudentAsync(
+        Guid sectionId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<SavedGradeDto>> SaveAsync(
         Guid sectionId,
         Guid? lecturerUserId,

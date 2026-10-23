@@ -205,6 +205,42 @@ public sealed class ClassSessionService(IClassSessionRepository sessions) : ICla
         return await sessions.ListForLecturerAsync(lecturerId, fromUtc, toUtc, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<StudentScheduleItemDto>> ListForCurrentStudentAsync(
+        Guid userId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        string timeZoneId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+        {
+            throw Invalid("User ID is invalid.");
+        }
+
+        var (fromUtc, toUtc) = GetUtcRange(fromDate, toDate, timeZoneId);
+        var studentId = await sessions.GetStudentIdForUserAsync(userId, cancellationToken)
+            ?? throw new ClassSessionException(ClassSessionError.StudentNotFound,
+                "Student not found.");
+        return await sessions.ListForStudentAsync(studentId, fromUtc, toUtc, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<StudentScheduleItemDto>> ListUpcomingForCurrentStudentAsync(
+        Guid userId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty || limit is < 1 or > 100)
+        {
+            throw Invalid("User ID or limit is invalid.");
+        }
+
+        var studentId = await sessions.GetStudentIdForUserAsync(userId, cancellationToken)
+            ?? throw new ClassSessionException(ClassSessionError.StudentNotFound,
+                "Student not found.");
+        return await sessions.ListUpcomingForStudentAsync(
+            studentId, DateTime.UtcNow, limit, cancellationToken);
+    }
+
     public async Task<ClassSessionDto> UpdateAsync(
         UpdateClassSessionCommand command,
         CancellationToken cancellationToken = default)

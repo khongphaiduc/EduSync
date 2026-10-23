@@ -19,10 +19,24 @@ public interface IClassSessionRepository
 
     Task<Guid?> GetLecturerIdForUserAsync(Guid userId, CancellationToken cancellationToken);
 
+    Task<Guid?> GetStudentIdForUserAsync(Guid userId, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<LecturerScheduleItemDto>> ListForLecturerAsync(
         Guid lecturerId,
         DateTime fromUtc,
         DateTime toExclusiveUtc,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<StudentScheduleItemDto>> ListForStudentAsync(
+        Guid studentId,
+        DateTime fromUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<StudentScheduleItemDto>> ListUpcomingForStudentAsync(
+        Guid studentId,
+        DateTime fromUtc,
+        int limit,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<ExistingScheduleSession>> FindOverlapsAsync(

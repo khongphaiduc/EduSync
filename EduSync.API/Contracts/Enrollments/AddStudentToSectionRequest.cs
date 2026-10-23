@@ -5,5 +5,6 @@ namespace EduSync.API.Contracts.Enrollments;
 public sealed class AddStudentToSectionRequest
 {
     [Required]
-    public Guid StudentId { get; init; }
+    [StringLength(30)]
+    public string StudentCode { get; init; } = string.Empty;
 }

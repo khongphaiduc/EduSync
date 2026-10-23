@@ -105,6 +105,80 @@ public sealed class SectionGradeRepository(MyFschoolDemoContext context) : ISect
         return new SectionGradeListDto(sectionId, components, students, page, pageSize, totalCount);
     }
 
+    public async Task<StudentSectionGradesDto?> GetForStudentAsync(
+        Guid sectionId,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var enrollment = await context.Enrollments.AsNoTracking()
+            .Where(item => item.CourseSectionId == sectionId
+                && item.Student.UserId == userId && item.Status == "Registered")
+            .Select(item => new
+            {
+                item.Id,
+                item.CourseSectionId,
+                item.CourseSection.SectionCode,
+                item.CourseSection.CourseId,
+                item.CourseSection.Course.CourseCode,
+                item.CourseSection.Course.CourseName
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (enrollment is null)
+        {
+            return null;
+        }
+
+        var components = await context.GradeComponents.AsNoTracking()
+            .Where(component => component.CourseSectionId == sectionId)
+            .OrderBy(component => component.Name)
+            .ThenBy(component => component.Id)
+            .Select(component => new
+            {
+                component.Id,
+                component.Name,
+                component.Weight,
+                component.MaxScore
+            })
+            .ToArrayAsync(cancellationToken);
+        var grades = await context.Grades.AsNoTracking()
+            .Where(grade => grade.EnrollmentId == enrollment.Id
+                && grade.GradeComponent.CourseSectionId == sectionId)
+            .Select(grade => new
+            {
+                grade.Id,
+                grade.GradeComponentId,
+                grade.Score,
+                grade.GradedAt,
+                grade.UpdatedAt
+            })
+            .ToDictionaryAsync(grade => grade.GradeComponentId, cancellationToken);
+
+        var items = components.Select(component =>
+        {
+            grades.TryGetValue(component.Id, out var grade);
+            return new StudentComponentGradeDto(
+                component.Id,
+                component.Name,
+                component.Weight,
+                component.MaxScore,
+                grade?.Id,
+                grade?.Score,
+                grade?.GradedAt is null ? null :
+                    DateTime.SpecifyKind(grade.GradedAt.Value, DateTimeKind.Utc),
+                grade?.UpdatedAt is null ? null :
+                    DateTime.SpecifyKind(grade.UpdatedAt.Value, DateTimeKind.Utc));
+        }).ToArray();
+
+        return new StudentSectionGradesDto(
+            enrollment.CourseSectionId,
+            enrollment.SectionCode,
+            enrollment.CourseId,
+            enrollment.CourseCode,
+            enrollment.CourseName,
+            enrollment.Id,
+            items);
+    }
+
     public async Task<IReadOnlyList<SavedGradeDto>> SaveAsync(
         Guid sectionId, IReadOnlyList<SaveGradeItem> items, CancellationToken cancellationToken)
     {

@@ -26,6 +26,40 @@ public sealed class CourseSectionRepository(MyFschoolDemoContext context) : ICou
             .Where(section => section.Lecturer.UserId == userId),
             page, pageSize, cancellationToken);
 
+    public Task<bool> StudentExistsForUserAsync(Guid userId, CancellationToken cancellationToken) =>
+        context.Students.AsNoTracking()
+            .AnyAsync(student => student.UserId == userId, cancellationToken);
+
+    public async Task<IReadOnlyList<StudentSemesterCourseDto>> ListForStudentSemesterAsync(
+        Guid userId,
+        Guid semesterId,
+        CancellationToken cancellationToken)
+    {
+        return await context.Enrollments.AsNoTracking()
+            .Where(enrollment => enrollment.Student.UserId == userId
+                && enrollment.CourseSection.SemesterId == semesterId
+                && enrollment.Status == "Registered")
+            .OrderBy(enrollment => enrollment.CourseSection.Course.CourseCode)
+            .ThenBy(enrollment => enrollment.CourseSection.SectionCode)
+            .ThenBy(enrollment => enrollment.Id)
+            .Select(enrollment => new StudentSemesterCourseDto(
+                enrollment.Id,
+                enrollment.Status,
+                enrollment.CourseSection.CourseId,
+                enrollment.CourseSection.Course.CourseCode,
+                enrollment.CourseSection.Course.CourseName,
+                enrollment.CourseSection.Course.Credits,
+                enrollment.CourseSectionId,
+                enrollment.CourseSection.SectionCode,
+                enrollment.CourseSection.Status,
+                enrollment.CourseSection.SemesterId,
+                enrollment.CourseSection.Semester.Name,
+                enrollment.CourseSection.Semester.AcademicYear,
+                enrollment.CourseSection.LecturerId,
+                enrollment.CourseSection.Lecturer.FullName))
+            .ToArrayAsync(cancellationToken);
+    }
+
     private static async Task<CourseSectionListDto> ListAsync(
         IQueryable<CourseSection> query,
         int page,

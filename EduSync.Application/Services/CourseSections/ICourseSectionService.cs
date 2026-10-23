@@ -18,4 +18,9 @@ public interface ICourseSectionService
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<StudentSemesterCourseDto>> ListForStudentSemesterAsync(
+        Guid userId,
+        Guid semesterId,
+        CancellationToken cancellationToken = default);
 }

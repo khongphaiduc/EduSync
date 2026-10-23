@@ -13,7 +13,7 @@ public interface IEnrollmentRepository
     Task<SectionStudentListDto> ListStudentsAsync(
         Guid sectionId, int page, int pageSize, CancellationToken cancellationToken);
 
-    Task<EnrollmentStudentInfo?> GetStudentAsync(Guid studentId, CancellationToken cancellationToken);
+    Task<EnrollmentStudentInfo?> GetStudentByCodeAsync(string studentCode, CancellationToken cancellationToken);
 
     Task<bool> ExistsAsync(Guid sectionId, Guid studentId, CancellationToken cancellationToken);
 

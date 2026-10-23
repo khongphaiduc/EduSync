@@ -53,6 +53,12 @@ public sealed class ClassSessionRepository(MyFschoolDemoContext context) : IClas
             .Select(lecturer => (Guid?)lecturer.Id)
             .SingleOrDefaultAsync(cancellationToken);
 
+    public Task<Guid?> GetStudentIdForUserAsync(Guid userId, CancellationToken cancellationToken) =>
+        context.Students.AsNoTracking()
+            .Where(student => student.UserId == userId)
+            .Select(student => (Guid?)student.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+
     public async Task<IReadOnlyList<LecturerScheduleItemDto>> ListForLecturerAsync(
         Guid lecturerId,
         DateTime fromUtc,
@@ -80,6 +86,58 @@ public sealed class ClassSessionRepository(MyFschoolDemoContext context) : IClas
                 session.Status))
             .ToArrayAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<StudentScheduleItemDto>> ListForStudentAsync(
+        Guid studentId,
+        DateTime fromUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken)
+    {
+        return await ProjectStudentSchedule(StudentScheduleQuery(studentId)
+                .Where(session => session.StartAt < toExclusiveUtc && session.EndAt > fromUtc)
+                .OrderBy(session => session.StartAt)
+                .ThenBy(session => session.Id))
+            .ToArrayAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<StudentScheduleItemDto>> ListUpcomingForStudentAsync(
+        Guid studentId,
+        DateTime fromUtc,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        return await ProjectStudentSchedule(StudentScheduleQuery(studentId)
+                .Where(session => session.StartAt >= fromUtc && session.Status == "Scheduled")
+                .OrderBy(session => session.StartAt)
+                .ThenBy(session => session.Id)
+                .Take(limit))
+            .ToArrayAsync(cancellationToken);
+    }
+
+    private IQueryable<ClassSession> StudentScheduleQuery(Guid studentId) =>
+        context.ClassSessions.AsNoTracking()
+            .Where(session => session.CourseSection.Enrollments.Any(enrollment =>
+                enrollment.StudentId == studentId && enrollment.Status == "Registered"));
+
+    private static IQueryable<StudentScheduleItemDto> ProjectStudentSchedule(
+        IQueryable<ClassSession> query) =>
+        query
+            .Select(session => new StudentScheduleItemDto(
+                session.Id,
+                session.CourseSectionId,
+                session.CourseSection.SectionCode,
+                session.CourseSection.CourseId,
+                session.CourseSection.Course.CourseCode,
+                session.CourseSection.Course.CourseName,
+                session.CourseSection.SemesterId,
+                session.CourseSection.Semester.Name,
+                session.CourseSection.LecturerId,
+                session.CourseSection.Lecturer.FullName,
+                DateTime.SpecifyKind(session.StartAt, DateTimeKind.Utc),
+                DateTime.SpecifyKind(session.EndAt, DateTimeKind.Utc),
+                session.Room,
+                session.Topic,
+                session.Status));
 
     public async Task<IReadOnlyList<ExistingScheduleSession>> FindOverlapsAsync(
         Guid sectionId,

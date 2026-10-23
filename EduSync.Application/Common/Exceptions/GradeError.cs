@@ -5,6 +5,7 @@ public enum GradeError
     InvalidData,
     SectionNotFound,
     NotAssigned,
+    NotEnrolled,
     EnrollmentNotInSection,
     ComponentNotInSection
 }

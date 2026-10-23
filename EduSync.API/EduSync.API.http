@@ -123,13 +123,13 @@ GET {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/sessions?f
 Authorization: Bearer {{adminAccessToken}}
 Accept: application/json
 
-### Add a student to a course section (Admin; replace section and student IDs)
+### Add a student to a course section by student code (Admin; replace section ID)
 POST {{host}}/api/course-sections/00000000-0000-0000-0000-000000000001/students
 Authorization: Bearer {{adminAccessToken}}
 Content-Type: application/json
 
 {
-  "studentId": "00000000-0000-0000-0000-000000000002"
+  "studentCode": "STU001"
 }
 
 ### List students enrolled in a course section (Admin; replace section ID)
@@ -156,7 +156,7 @@ Content-Type: application/json
   "timeZoneId": "Asia/Ho_Chi_Minh"
 }
 
-### List semesters
+### List all semesters in the system (use an id for the student's semester courses)
 GET {{host}}/api/semesters
 Accept: application/json
 
@@ -251,6 +251,26 @@ Accept: application/json
 ### List teaching schedule for the signed-in lecturer
 GET {{host}}/api/lecturers/me/schedule?from=2026-09-01&to=2026-09-30&timeZoneId=Asia/Ho_Chi_Minh
 Authorization: Bearer {{lecturerAccessToken}}
+Accept: application/json
+
+### List this week's class schedule for the signed-in student (Monday through Sunday)
+GET {{host}}/api/students/me/schedule?from=2026-09-07&to=2026-09-13&timeZoneId=Asia/Ho_Chi_Minh
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### List the next scheduled class sessions for the signed-in student
+GET {{host}}/api/students/me/schedule/upcoming?limit=10
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### List registered courses in a semester for the signed-in student (replace semester ID)
+GET {{host}}/api/students/me/semesters/00000000-0000-0000-0000-000000000002/courses
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### View component grades for one enrolled course section (Student; replace section ID)
+GET {{host}}/api/students/me/course-sections/00000000-0000-0000-0000-000000000001/grades
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ### Open a class session's attendance roster (Lecturer; replace session ID from schedule)

@@ -31,6 +31,32 @@ public sealed class CourseSectionService(ICourseSectionRepository sections) : IC
         return sections.ListForLecturerAsync(userId, page, pageSize, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<StudentSemesterCourseDto>> ListForStudentSemesterAsync(
+        Guid userId,
+        Guid semesterId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty || semesterId == Guid.Empty)
+        {
+            throw new CourseSectionException(CourseSectionError.InvalidData,
+                "User ID and semester ID are required.");
+        }
+
+        if (!await sections.SemesterExistsAsync(semesterId, cancellationToken))
+        {
+            throw new CourseSectionException(CourseSectionError.SemesterNotFound,
+                "Semester does not exist.");
+        }
+
+        if (!await sections.StudentExistsForUserAsync(userId, cancellationToken))
+        {
+            throw new CourseSectionException(CourseSectionError.StudentNotFound,
+                "Student does not exist.");
+        }
+
+        return await sections.ListForStudentSemesterAsync(userId, semesterId, cancellationToken);
+    }
+
     private static void ValidatePagination(int page, int pageSize)
     {
         if (page < 1)

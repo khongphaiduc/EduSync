@@ -31,6 +31,28 @@ public sealed class SectionGradeService(ISectionGradeRepository grades) : ISecti
         return await grades.ListAsync(sectionId, page, pageSize, cancellationToken);
     }
 
+    public async Task<StudentSectionGradesDto> GetForStudentAsync(
+        Guid sectionId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (sectionId == Guid.Empty || userId == Guid.Empty)
+        {
+            throw new GradeException(GradeError.InvalidData,
+                "Course section ID and user ID are required.");
+        }
+
+        if (await grades.GetSectionAsync(sectionId, cancellationToken) is null)
+        {
+            throw new GradeException(GradeError.SectionNotFound,
+                "Course section does not exist.");
+        }
+
+        return await grades.GetForStudentAsync(sectionId, userId, cancellationToken)
+            ?? throw new GradeException(GradeError.NotEnrolled,
+                "Student is not enrolled in this course section.");
+    }
+
     public async Task<IReadOnlyList<SavedGradeDto>> SaveAsync(
         Guid sectionId,
         Guid? lecturerUserId,

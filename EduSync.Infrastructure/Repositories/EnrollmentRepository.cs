@@ -71,9 +71,9 @@ public sealed class EnrollmentRepository(MyFschoolDemoContext context) : IEnroll
                 section.Enrollments.Count))
             .SingleOrDefaultAsync(cancellationToken);
 
-    public Task<EnrollmentStudentInfo?> GetStudentAsync(Guid studentId, CancellationToken cancellationToken) =>
+    public Task<EnrollmentStudentInfo?> GetStudentByCodeAsync(string studentCode, CancellationToken cancellationToken) =>
         context.Students.AsNoTracking()
-            .Where(student => student.Id == studentId)
+            .Where(student => student.StudentCode == studentCode)
             .Select(student => new EnrollmentStudentInfo(
                 student.Id, student.Status, student.User.IsActive))
             .SingleOrDefaultAsync(cancellationToken);

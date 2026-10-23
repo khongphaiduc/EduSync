@@ -48,9 +48,14 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
 
         if (exception is CourseSectionException sectionException)
         {
-            httpContext.Response.StatusCode = sectionException.Error == CourseSectionError.AlreadyExists
-                ? StatusCodes.Status409Conflict
-                : StatusCodes.Status400BadRequest;
+            httpContext.Response.StatusCode = sectionException.Error switch
+            {
+                CourseSectionError.CourseNotFound or CourseSectionError.SemesterNotFound
+                    or CourseSectionError.StudentNotFound or CourseSectionError.LecturerNotFound =>
+                    StatusCodes.Status404NotFound,
+                CourseSectionError.AlreadyExists => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
             await httpContext.Response.WriteAsJsonAsync(
                 ApiResponse<object?>.Failed(sectionException.Message),
                 cancellationToken);
@@ -62,6 +67,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             httpContext.Response.StatusCode = sessionException.Error switch
             {
                 ClassSessionError.SectionNotFound or ClassSessionError.LecturerNotFound
+                    or ClassSessionError.StudentNotFound
                     or ClassSessionError.SessionNotFound =>
                     StatusCodes.Status404NotFound,
                 ClassSessionError.ScheduleConflict => StatusCodes.Status409Conflict,
@@ -109,7 +115,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             httpContext.Response.StatusCode = gradeException.Error switch
             {
                 GradeError.SectionNotFound => StatusCodes.Status404NotFound,
-                GradeError.NotAssigned => StatusCodes.Status403Forbidden,
+                GradeError.NotAssigned or GradeError.NotEnrolled => StatusCodes.Status403Forbidden,
                 GradeError.EnrollmentNotInSection or GradeError.ComponentNotInSection =>
                     StatusCodes.Status400BadRequest,
                 _ => StatusCodes.Status400BadRequest

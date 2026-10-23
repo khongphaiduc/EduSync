@@ -19,4 +19,9 @@ public interface ICourseSectionRepository
 
     Task<CourseSectionListDto> ListForLecturerAsync(
         Guid userId, int page, int pageSize, CancellationToken cancellationToken);
+
+    Task<bool> StudentExistsForUserAsync(Guid userId, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<StudentSemesterCourseDto>> ListForStudentSemesterAsync(
+        Guid userId, Guid semesterId, CancellationToken cancellationToken);
 }

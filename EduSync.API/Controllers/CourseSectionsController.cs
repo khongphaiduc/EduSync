@@ -30,7 +30,7 @@ public sealed class CourseSectionsController(
         CancellationToken cancellationToken)
     {
         var result = await enrollments.AddStudentAsync(
-            sectionId, request.StudentId, cancellationToken);
+            sectionId, request.StudentCode, cancellationToken);
         return StatusCode(StatusCodes.Status201Created,
             ApiResponse<EnrollmentDto>.Succeeded(result, "Student enrolled."));
     }

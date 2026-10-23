@@ -5,7 +5,7 @@ namespace EduSync.Application.Services.Enrollments;
 public interface IEnrollmentService
 {
     Task<EnrollmentDto> AddStudentAsync(
-        Guid sectionId, Guid studentId, CancellationToken cancellationToken = default);
+        Guid sectionId, string studentCode, CancellationToken cancellationToken = default);
 
     Task<SectionStudentListDto> ListStudentsAsync(
         Guid sectionId, int page, int pageSize, Guid? lecturerUserId,
